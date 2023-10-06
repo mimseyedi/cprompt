@@ -120,3 +120,15 @@ def remove_ansi_from_string(string: str) -> str:
     """
 
     return re.compile(ANSI_PATTERN).sub('', string)
+
+
+def extract_ansi_from_string(string: str) -> list[str]:
+    """
+    The task of this function is to extract ANSI codes from inside a string.
+    This function will return the ANSI escape codes in a list format.
+
+    :param string: A string containing ANSI codes.
+    :return: list[str]
+    """
+
+    return re.compile(ANSI_PATTERN).findall(string)
