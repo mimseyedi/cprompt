@@ -183,6 +183,7 @@ def get_256_color_cell(color_code: int, color_type: str) -> str:
     """
     The task of this function is to return a color graphic cell
     based on color codes between 0 and 255.
+    For more information: https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797#256-colors
 
     :param color_code: A color code between 0 and 255.
     :param color_type: A color type between 'bg' for background or 'fg' for foreground.
@@ -205,3 +206,36 @@ def get_256_color_cell(color_code: int, color_type: str) -> str:
         return ESC + CSI + '48;5;' + color_code.__str__() + 'm'
 
     return ESC + CSI + '38;5;' + color_code.__str__() + 'm'
+
+
+def get_rgb_color_cell(r: int, g: int, b: int, color_type: str) -> str:
+    """
+    The task of this function is to return a color graphic cell based on 'rgb' codes.
+    For more information: https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797#rgb-colors
+
+    :param r: Red color code based on rgb.
+    :param g: Green color code based on rgb.
+    :param b: Blue color code base on rgb.
+    :param color_type: A color type between 'bg' for background or 'fg' for foreground.
+    :return: str
+    """
+
+    if not isinstance(r, int):
+        raise TypeError(f'The type of the "r" argument must be an integer, but received "{type(r)}"')
+
+    if not isinstance(g, int):
+        raise TypeError(f'The type of the "g" argument must be an integer, but received "{type(g)}"')
+
+    if not isinstance(b, int):
+        raise TypeError(f'The type of the "b" argument must be an integer, but received "{type(b)}"')
+
+    if not isinstance(color_type, str):
+        raise TypeError(f'The type of the color_type argument must be a string, but received "{type(color_type)}".')
+
+    if color_type not in ('bg', 'fg',):
+        raise ValueError(f'The value of the color_type argument must be between "bg" and "fg", but received: "{color_type}".')
+
+    if color_type == 'bg':
+        return ESC + CSI + '48;2;' + ';'.join(map(lambda x: x.__str__, [r, g, b])) + 'm'
+
+    return ESC + CSI + '38;2;' + ';'.join(map(lambda x: x.__str__, [r, g, b])) + 'm'
