@@ -119,6 +119,9 @@ def remove_ansi_from_string(string: str) -> str:
     :return: str
     """
 
+    if not isinstance(string, str):
+        raise TypeError(f'The string argument must be of the string type, but received: "{type(string)}".')
+
     return re.compile(ANSI_PATTERN).sub('', string)
 
 
@@ -130,6 +133,9 @@ def extract_ansi_from_string(string: str) -> list[str]:
     :param string: A string containing ANSI codes.
     :return: list[str]
     """
+
+    if not isinstance(string, str):
+        raise TypeError(f'The string argument must be of the string type, but received: "{type(string)}".')
 
     return re.compile(ANSI_PATTERN).findall(string)
 
@@ -144,6 +150,9 @@ def extract_non_ansi(string: str) -> tuple[bool, str]:
     :return: tuple[bool, str]
     """
 
+    if not isinstance(string, str):
+        raise TypeError(f'The string argument must be of the string type, but received: "{type(string)}".')
+
     compiled_pattern = re.compile(ANSI_PATTERN)
 
     if compiled_pattern.findall(string):
@@ -152,7 +161,7 @@ def extract_non_ansi(string: str) -> tuple[bool, str]:
     return False, string
 
 
-def get_graphics_cell(*args) -> str:
+def get_graphic_cell(*args) -> str:
     """
     The task of this function is to return an ANSI graphics cell
     according to the graphic arguments, in the form of a string.
@@ -162,4 +171,37 @@ def get_graphics_cell(*args) -> str:
     :return: str
     """
 
-    return ESC + CSI + ';'.join(map(lambda x: x.__str__(), args)) + 'm'
+    try:
+        graphic_codes: list = list(map(int, args))
+    except ValueError:
+        raise TypeError('All graphic codes must be int type or have the ability to convert to int.')
+
+    return ESC + CSI + ';'.join(map(lambda x: x.__str__(), graphic_codes)) + 'm'
+
+
+def get_256_color_cell(color_code: int, color_type: str) -> str:
+    """
+    The task of this function is to return a color graphic cell
+    based on color codes between 0 and 255.
+
+    :param color_code: A color code between 0 and 255.
+    :param color_type: A color type between 'bg' for background or 'fg' for foreground.
+    :return: str
+    """
+
+    if not isinstance(color_code, int):
+        raise TypeError(f'The type of the color_code argument must be a int, but received "{type(color_code)}".')
+
+    if not 0 <= color_code <= 255:
+        raise ValueError(f'The color code must be between 0 and 255. Received code: {color_code}')
+
+    if not isinstance(color_type, str):
+        raise TypeError(f'The type of the color_type argument must be a string, but received "{type(color_type)}".')
+
+    if color_type not in ('bg', 'fg',):
+        raise ValueError(f'The value of the color_type argument must be between "bg" and "fg", but received: "{color_type}".')
+
+    if color_type == 'bg':
+        return ESC + CSI + '48;5;' + color_code.__str__() + 'm'
+
+    return ESC + CSI + '38;5;' + color_code.__str__() + 'm'
