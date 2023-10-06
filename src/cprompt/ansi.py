@@ -150,3 +150,16 @@ def extract_non_ansi(string: str) -> tuple[bool, str]:
         return True, compiled_pattern.sub('', string)
 
     return False, string
+
+
+def get_graphics_cell(*args) -> str:
+    """
+    The task of this function is to return an ANSI graphics cell
+    according to the graphic arguments, in the form of a string.
+    For more information: https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797#colors--graphics-mode
+
+    :param args: ANSI graphic codes
+    :return: str
+    """
+
+    return ESC + CSI + ';'.join(map(lambda x: x.__str__(), args)) + 'm'
