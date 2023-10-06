@@ -12,6 +12,9 @@ resource: https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
 """
 
 
+import re
+
+
 # Base ANSI
 ESC = '\033'
 CSI = '['
@@ -107,3 +110,13 @@ DISABLE_ALTERNATIVE_BUFFER = '\033[?1049l'
 ANSI_PATTERN = r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])'
 
 
+def remove_ansi_from_string(string: str) -> str:
+    """
+    The task of this function is to remove ANSI codes from inside a string.
+    This function will return the cleared string.
+
+    :param string: A string containing ANSI codes.
+    :return: str
+    """
+
+    return re.compile(ANSI_PATTERN).sub('', string)
