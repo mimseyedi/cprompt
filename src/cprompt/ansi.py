@@ -132,3 +132,21 @@ def extract_ansi_from_string(string: str) -> list[str]:
     """
 
     return re.compile(ANSI_PATTERN).findall(string)
+
+
+def extract_non_ansi(string: str) -> tuple[bool, str]:
+    """
+    The task of this function is to check a string and extract non-ANSI characters.
+    If there are no ANSI codes in the string, this function will return a tuple with the value False and the string
+    itself, and if there are ANSI codes in the string, it will return a tuple with the value True and the cleaned string.
+
+    :param string: A string containing ANSI codes.
+    :return: tuple[bool, str]
+    """
+
+    compiled_pattern = re.compile(ANSI_PATTERN)
+
+    if compiled_pattern.findall(string):
+        return True, compiled_pattern.sub('', string)
+
+    return False, string
