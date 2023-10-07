@@ -6,9 +6,22 @@
 ╚██████╗██║     ██║  ██║╚██████╔╝██║ ╚═╝ ██║██║        ██║
  ╚═════╝╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚═╝        ╚═╝
 
+cprompt is a package for creating live and customized one-line prompts that can
+be used to manage and personalize input from the user in the terminal (bash) environment.
+
 cprompt Github repository: https://github.com/mimseyedi/cprompt
 
-resource: https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
+This file is related to ANSI escape codes. There are ANSI escape code constants in this file
+that can be used more easily and with a more regular appearance.
+There are also functions to get more complex ANSI escape codes along with special
+combinations that can be useful for communicating with the bash terminal.
+
+ANSI escape sequences are a standard for in-band signaling to control cursor location, color,
+font styling, and other options on video text terminals and terminal emulators.
+Certain sequences of bytes, most starting with an ASCII escape character and a bracket character, are embedded into text.
+The terminal interprets these sequences as commands, rather than text to display verbatim.
+
+For more information: https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
 """
 
 
