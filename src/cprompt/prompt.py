@@ -18,8 +18,12 @@ import sys
 
 from ansi import (
     TERMINAL_BELL,
+    ERASE_ENTIRE_LINE,
+    move_cursor_to_column,
     get_cursor_position as gcp,
 )
+from keys import KEYS, readkey
+
 
 class Cprompt:
     """
@@ -156,7 +160,25 @@ class Cprompt:
         self.__text = ""
 
     def display(self) -> None:
-        pass
+        temp: str = self.__text.replace(" ", " - ")
+
+        output: list = []
+        for word in temp.split():
+            if word in self.__formatted.keys():
+                output.append(self.__formatted[word])
+            else:
+                if word == '-':
+                    output.append(" ")
+                else:
+                    output.append(word)
+
+        sys.stdout.write(ERASE_ENTIRE_LINE)
+        sys.stdout.write(move_cursor_to_column(col=0))
+
+        sys.stdout.write(
+            self.message + ''.join(output) + move_cursor_to_column(col=self.__cursor)
+        )
+        sys.stdout.flush()
 
     def prompt(self) -> str:
         pass
