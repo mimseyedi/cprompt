@@ -26,6 +26,9 @@ For more information: https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296
 
 
 import re
+import sys
+import termios
+from errors import ReadCursorPositionError
 
 
 # Base ANSI
@@ -376,3 +379,39 @@ def move_cursor_to_previous_line(lines_up: int) -> str:
         raise TypeError(f'The type of the "lines_up" argument must be an integer, but received "{type(lines_up)}"')
 
     return ESC + CSI + lines_up.__str__() + 'F'
+
+
+def get_cursor_position() -> tuple[int, int]:
+    """
+    The task of this function is to request the cursor position from the terminal
+    by special ANSI escape code and read the position.
+    The value that this function returns is a tuple consisting of row and column positions as an integer.
+
+    :return: tuple[int, int]
+    """
+
+    old_stdin_mode = termios.tcgetattr(sys.stdin)
+    _ = termios.tcgetattr(sys.stdin)
+    _[3] = _[3] & ~(termios.ECHO | termios.ICANON)
+    termios.tcsetattr(sys.stdin, termios.TCSAFLUSH, _)
+
+    try:
+        _ = ""
+        sys.stdout.write(REQUEST_CURSOR_POSITION)
+        sys.stdout.flush()
+
+        while not (_ := _ + sys.stdin.read(1)).endswith('R'):
+            ...
+        res = re.match(r".*\[(?P<y>\d*);(?P<x>\d*)R", _)
+    finally:
+        termios.tcsetattr(sys.stdin, termios.TCSAFLUSH, old_stdin_mode)
+
+    try:
+        row, col = int(res.group("y")), int(res.group("x"))
+    except ValueError:
+        raise ReadCursorPositionError(
+            (f'The cursor position cannot be read or converted. '
+            'Obtained position: (row={res.group("y")}, col={res.group("x")})')
+        )
+
+    return row, col
