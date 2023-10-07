@@ -88,7 +88,7 @@ class Cprompt:
         pass
 
     def clear(self) -> None:
-        pass
+        self.__text = ""
 
     def display(self) -> None:
         pass
