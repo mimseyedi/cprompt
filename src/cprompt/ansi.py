@@ -239,3 +239,23 @@ def get_rgb_color_cell(r: int, g: int, b: int, color_type: str) -> str:
         return ESC + CSI + '48;2;' + ';'.join(map(lambda x: x.__str__, [r, g, b])) + 'm'
 
     return ESC + CSI + '38;2;' + ';'.join(map(lambda x: x.__str__, [r, g, b])) + 'm'
+
+
+def move_cursor(row: int, col: int) -> str:
+    """
+    The task of this function is to move the cursor to the desired coordinates.
+    This function will return a string containing the ANSI code of the new cursor position.
+
+    :param row: The desired line to move the cursor to the point.
+    :param col: The desired column to move the cursor to the point.
+    :return: str
+    """
+
+    if not isinstance(row, int):
+        raise TypeError(f'The type of the "row" argument must be an integer, but received "{type(row)}"')
+
+    if not isinstance(col, int):
+        raise TypeError(f'The type of the "col" argument must be an integer, but received "{type(col)}"')
+
+    return ESC + CSI + row.__str__() + ';' + col.__str__() + 'H'
+
