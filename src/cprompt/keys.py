@@ -63,3 +63,21 @@ KEYS: dict = {
     'ctrl-\\'    : '\x1c',
     'ctrl-]'     : '\x1d',
 }
+
+
+def getchar() -> str:
+    """
+    The task of this function is to read a character from the input entered in the terminal.
+    This function will return the character read from the terminal in the form of a string of length one.
+
+    :return: str
+    """
+
+    fd: int = sys.stdin.fileno()
+    attr: list = termios.tcgetattr(fd)
+
+    try:
+        tty.setraw(fd)
+        return sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSANOW, attr)
