@@ -86,28 +86,41 @@ class Cprompt:
             sys.stdout.write(TERMINAL_BELL)
 
     def get_word_before_cursor(self) -> str:
-        pass
+        splitted_text: list = self.__text[:self.__cursor].split()
+        return splitted_text[-1] if splitted_text else ''
 
     def get_word_after_cursor(self) -> str:
-        pass
+        splitted_text: list = self.__text[self.__cursor:].split()
+        return splitted_text[0] if splitted_text else ''
 
     def get_text_before_cursor(self) -> str:
-        pass
+        return self.__text[:self.__cursor]
 
     def get_text_after_cursor(self) -> str:
-        pass
+        return self.__text[self.__cursor:]
 
     def del_word_before_cursor(self) -> None:
-        pass
+        for _ in range(len(self.get_word_before_cursor()) + 1):
+            self.remove()
 
     def del_word_after_cursor(self) -> None:
-        pass
+        len_of_word_after_cursor: int = len(self.get_word_after_cursor()) + 1
+
+        self.__cursor += len_of_word_after_cursor
+
+        for _ in range(len_of_word_after_cursor):
+            self.remove()
 
     def del_text_before_cursor(self) -> None:
-        pass
+        for _ in range(len(self.get_text_before_cursor())):
+            self.remove()
 
     def del_text_after_cursor(self) -> None:
-        pass
+        len_of_text_after_cursor: int = len(self.get_text_after_cursor()) + 1
+        self.__cursor += len_of_text_after_cursor
+
+        for _ in range(len_of_text_after_cursor):
+            self.remove()
 
     @staticmethod
     def get_cursor_position() -> tuple[int, int]:
