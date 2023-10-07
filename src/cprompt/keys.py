@@ -6,7 +6,17 @@
 ╚██████╗██║     ██║  ██║╚██████╔╝██║ ╚═╝ ██║██║        ██║
  ╚═════╝╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚═╝        ╚═╝
 
+cprompt is a package for creating live and customized one-line prompts that can
+be used to manage and personalize input from the user in the terminal (bash) environment.
+
 cprompt Github repository: https://github.com/mimseyedi/cprompt
+
+This file is related to keyboard keys and their special codes in low level style.
+In this file, there are specified keys in the KEYS constant, which can be read from
+the keyboard to the terminal with the help of two functions, readkey and getchar.
+
+For more information:
+https://stackoverflow.com/questions/64035952/how-to-key-press-detection-on-a-linux-terminal-low-level-style-in-python
 """
 
 
