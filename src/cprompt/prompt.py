@@ -40,10 +40,24 @@ class Cprompt:
         self.conditions = tuple() if conditions is None else conditions
 
     def write(self, char: str) -> None:
-        pass
+        if isinstance(char, str):
+            if self.__text:
+                termcol, _ = os.get_terminal_size()
+                if len(self.__text) + len(self.message) < termcol:
+                    self.__text = self.__text[0:self.__cursor] + char + self.__text[self.__cursor:]
+                    self.__cursor += 1
+            else:
+                self.__text += char
+                self.__cursor += 1
+        else:
+            raise TypeError
 
     def insert_text(self, text: str) -> None:
-        pass
+        if isinstance(text, str):
+            for char in text:
+                self.write(char)
+        else:
+            raise TypeError
 
     def remove(self) -> None:
         pass
