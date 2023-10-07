@@ -245,22 +245,50 @@ class Cprompt:
         return self.__text
 
     def __ge__(self, other):
-        pass
+        if isinstance(other, Cprompt):
+            return len(self.__text) >= len(other.__text)
+
+        elif isinstance(other, str):
+            return len(self.__text) >= len(other)
+
+        raise TypeError
 
     def __gt__(self, other):
-        pass
+        if isinstance(other, Cprompt):
+            return len(self.__text) > len(other.__text)
+
+        elif isinstance(other, str):
+            return len(self.__text) > len(other)
+
+        raise TypeError
 
     def __eq__(self, other):
-        pass
+        if isinstance(other, Cprompt):
+            return len(self.__text) == len(other.__text)
+
+        elif isinstance(other, str):
+            return len(self.__text) == len(other)
+
+        elif isinstance(other, bool):
+            return True if self.__text else False
+
+        raise TypeError
 
     def __len__(self):
-        pass
+        return len(self.__text)
 
     def __bool__(self):
-        pass
+        return True if len(self.__text) > 0 else False
 
     def __str__(self):
-        pass
+        return self.__text.__str__()
 
     def __repr__(self):
-        pass
+        return (
+            'Cprompt('
+            f'message={self.message}, '
+            f'conditions={self.conditions}, '
+            f'text={self.__text}, '
+            f'cursor={self.__cursor}, '
+            f'formatted={self.__formatted})'
+        )
