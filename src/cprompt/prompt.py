@@ -16,6 +16,9 @@ cprompt Github repository: https://github.com/mimseyedi/cprompt
 import os
 import sys
 
+from ansi import (
+    TERMINAL_BELL,
+)
 
 class Cprompt:
     """
@@ -60,13 +63,23 @@ class Cprompt:
             raise TypeError
 
     def remove(self) -> None:
-        pass
+        if self.__cursor > 0:
+            self.__cursor -= 1
+            self.__text = self.__text[:self.__cursor] + self.__text[self.__cursor+1:]
+        else:
+            sys.stdout.write(TERMINAL_BELL)
 
     def move_cursor_right(self) -> None:
-        pass
+        if self.__cursor < len(self.__text):
+            self.__cursor += 1
+        else:
+            sys.stdout.write(TERMINAL_BELL)
 
     def move_cursor_left(self) -> None:
-        pass
+        if self.__cursor > 0:
+            self.__cursor -= 1
+        else:
+            sys.stdout.write(TERMINAL_BELL)
 
     def get_cursor_position(self) -> tuple[int, int]:
         pass
