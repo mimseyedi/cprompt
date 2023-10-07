@@ -333,3 +333,33 @@ def move_cursor_left(columns: int) -> str:
         raise TypeError(f'The type of the "columns" argument must be an integer, but received "{type(columns)}"')
 
     return ESC + CSI + columns.__str__() + 'D'
+
+
+def move_cursor_to_next_line(lines_down: int) -> str:
+    """
+    The task of this function is to move the cursor to the next lines.
+    The number of this shift is determined by the lines_down argument.
+
+    :param lines_down: The number of lines where the cursor is supposed to move down.
+    :return: str
+    """
+
+    if not isinstance(lines_down, int):
+        raise TypeError(f'The type of the "lines_down" argument must be an integer, but received "{type(lines_down)}"')
+
+    return ESC + CSI + lines_down.__str__() + 'E'
+
+
+def move_cursor_to_previous_line(lines_up: int) -> str:
+    """
+    The task of this function is to move the cursor to the previous lines.
+    The number of this shift is determined by the lines_up argument.
+
+    :param lines_up: The number of lines where the cursor is supposed to move up.
+    :return: str
+    """
+
+    if not isinstance(lines_up, int):
+        raise TypeError(f'The type of the "lines_up" argument must be an integer, but received "{type(lines_up)}"')
+
+    return ESC + CSI + lines_up.__str__() + 'F'
