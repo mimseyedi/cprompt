@@ -273,3 +273,63 @@ def move_cursor_to_column(col: int) -> str:
         raise TypeError(f'The type of the "col" argument must be an integer, but received "{type(col)}"')
 
     return ESC + CSI + col.__str__() + 'G'
+
+
+def move_cursor_up(lines: int) -> str:
+    """
+    The task of this function is to move up the cursor to the number of lines it receives from the lines argument.
+    The output of this function is a string containing the ANSI code for moving up the cursor.
+
+    :param lines: The number of lines where the cursor is supposed to go up.
+    :return: str
+    """
+
+    if not isinstance(lines, int):
+        raise TypeError(f'The type of the "lines" argument must be an integer, but received "{type(lines)}"')
+
+    return ESC + CSI + lines.__str__() + 'A'
+
+
+def move_cursor_down(lines: int) -> str:
+    """
+    The task of this function is to move down the cursor by the number of lines it receives from the lines argument.
+    The output of this function is a string containing the ANSI code for moving down the cursor.
+
+    :param lines: The number of lines where the cursor is supposed to go down.
+    :return: str
+    """
+
+    if not isinstance(lines, int):
+        raise TypeError(f'The type of the "lines" argument must be an integer, but received "{type(lines)}"')
+
+    return ESC + CSI + lines.__str__() + 'B'
+
+
+def move_cursor_right(columns: int) -> str:
+    """
+    The task of this function is to move right the cursor by the number of columns it receives from the columns argument.
+    The output of this function is a string containing the ANSI code for moving right the cursor.
+
+    :param columns: The number of columns where the cursor is supposed to go right.
+    :return: str
+    """
+
+    if not isinstance(columns, int):
+        raise TypeError(f'The type of the "columns" argument must be an integer, but received "{type(columns)}"')
+
+    return ESC + CSI + columns.__str__() + 'C'
+
+
+def move_cursor_left(columns: int) -> str:
+    """
+    The task of this function is to move left the cursor by the number of columns it receives from the columns argument.
+    The output of this function is a string containing the ANSI code for moving left the cursor.
+
+    :param columns: The number of columns where the cursor is supposed to go left.
+    :return: str
+    """
+
+    if not isinstance(columns, int):
+        raise TypeError(f'The type of the "columns" argument must be an integer, but received "{type(columns)}"')
+
+    return ESC + CSI + columns.__str__() + 'D'
