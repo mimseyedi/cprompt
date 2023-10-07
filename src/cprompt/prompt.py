@@ -17,6 +17,7 @@ import os
 import sys
 
 from ansi import (
+    NEW_LINE,
     TERMINAL_BELL,
     ERASE_ENTIRE_LINE,
     move_cursor_to_column,
@@ -34,7 +35,6 @@ class Cprompt:
         self,
         message: str="",
         *,
-        keys: dict=None,
         conditions: tuple=None,
     ):
         self.message = message
@@ -44,14 +44,13 @@ class Cprompt:
         self.__formatted: dict = {}
         self.__last_key: str = ""
 
-        self.keys = {} if keys is None else keys
         self.conditions = tuple() if conditions is None else conditions
 
     def write(self, char: str) -> None:
         if isinstance(char, str):
             if self.__text:
                 termcol, _ = os.get_terminal_size()
-                if len(self.__text) + len(self.message) < termcol:
+                if len(self.__text) + len(self.message) + 1 < termcol:
                     self.__text = self.__text[0:self.__cursor] + char + self.__text[self.__cursor:]
                     self.__cursor += 1
             else:
@@ -176,12 +175,74 @@ class Cprompt:
         sys.stdout.write(move_cursor_to_column(col=0))
 
         sys.stdout.write(
-            self.message + ''.join(output) + move_cursor_to_column(col=self.__cursor)
+            self.message + ''.join(output) + move_cursor_to_column(col=self.__cursor+len(self.message)+1)
         )
         sys.stdout.flush()
 
     def prompt(self) -> str:
-        pass
+        sys.stdout.write(self.message)
+        sys.stdout.flush()
+
+        while True:
+            key: str = readkey()
+            self.__last_key: str = key
+            exit_status: bool = False
+
+            if self.conditions:
+                for func in self.conditions:
+                    try:
+                        func(self)
+                        continue
+                    except SystemExit:
+                        exit_status = True
+                    except TypeError:
+                        raise Exception
+
+            match key:
+                case 'ENTER':
+                    self.display()
+                    sys.stdout.write(NEW_LINE)
+                    break
+
+                case 'BACKSPACE':
+                    self.remove()
+
+                case 'RIGHT':
+                    self.move_cursor_right()
+
+                case 'LEFT':
+                    self.move_cursor_left()
+
+                case 'SPACE':
+                    self.write(" ")
+
+                case _:
+                    special_keys: tuple = (
+                        'UP',
+                        'DOWN',
+                        'SHIFT+RIGHT',
+                        'SHIFT+LEFT',
+                        'ESCAPE',
+                        'TAB',
+                        'INSERT',
+                        'DELETE',
+                        'PAGE_UP',
+                        'PAGE_DOWN',
+                        'HOME',
+                        'END',
+                    )
+                    if key is not None:
+                        if not key.startswith('CTRL') and key not in special_keys:
+                            self.write(key)
+
+            self.display()
+
+            if exit_status:
+                sys.stdout.write(NEW_LINE)
+                sys.stdout.flush()
+                break
+
+        return self.__text
 
     def __ge__(self, other):
         pass
