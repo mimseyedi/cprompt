@@ -84,8 +84,40 @@ class Cprompt:
     def del_text_after_cursor(self) -> None:
         pass
 
-    def get_lastkey(self) -> str:
-        pass
+    @property
+    def text(self) -> str:
+        return self.__text
+
+    @text.setter
+    def text(self, text_: str) -> None:
+        if isinstance(text_, str):
+            self.__text = text_
+            self.__cursor = len(self.__text)
+        else:
+            raise TypeError
+
+    @property
+    def cursor(self) -> int:
+        return self.__cursor
+
+    @property
+    def formatted(self) -> dict:
+        return self.__formatted.copy()
+
+    @formatted.setter
+    def formatted(self, formatted_: dict) -> None:
+        if isinstance(formatted_, dict):
+            for key, value in formatted_.items():
+                if not isinstance(key, str) or not isinstance(value, str):
+                    raise Exception
+
+            self.__formatted = formatted_.copy()
+        else:
+            raise TypeError
+
+    @property
+    def last_key(self) -> str:
+        return self.__last_key
 
     def clear(self) -> None:
         self.__text = ""
