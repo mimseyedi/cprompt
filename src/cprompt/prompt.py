@@ -18,6 +18,7 @@ import sys
 
 from ansi import (
     TERMINAL_BELL,
+    get_cursor_position as gcp,
 )
 
 class Cprompt:
@@ -81,12 +82,6 @@ class Cprompt:
         else:
             sys.stdout.write(TERMINAL_BELL)
 
-    def get_cursor_position(self) -> tuple[int, int]:
-        pass
-
-    def set_cursor_position(self, col: int, row: int=None) -> None:
-        pass
-
     def get_word_before_cursor(self) -> str:
         pass
 
@@ -111,6 +106,10 @@ class Cprompt:
     def del_text_after_cursor(self) -> None:
         pass
 
+    @staticmethod
+    def get_cursor_position() -> tuple[int, int]:
+        return gcp()
+
     @property
     def text(self) -> str:
         return self.__text
@@ -126,6 +125,13 @@ class Cprompt:
     @property
     def cursor(self) -> int:
         return self.__cursor
+
+    @cursor.setter
+    def cursor(self, cursor_: int) -> None:
+        if isinstance(cursor_, int):
+            self.__cursor = cursor_
+        else:
+            raise TypeError
 
     @property
     def formatted(self) -> dict:
