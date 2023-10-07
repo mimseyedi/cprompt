@@ -259,3 +259,17 @@ def move_cursor(row: int, col: int) -> str:
 
     return ESC + CSI + row.__str__() + ';' + col.__str__() + 'H'
 
+
+def move_cursor_to_column(col: int) -> str:
+    """
+    The task of this function is to move the cursor to the desired column.
+    This function will return a string containing the ANSI code to move the cursor to the specified column.
+
+    :param col: The desired column to move the cursor to the point.
+    :return: str
+    """
+
+    if not isinstance(col, int):
+        raise TypeError(f'The type of the "col" argument must be an integer, but received "{type(col)}"')
+
+    return ESC + CSI + col.__str__() + 'G'
