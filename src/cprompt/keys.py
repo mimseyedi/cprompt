@@ -13,6 +13,7 @@ cprompt Github repository: https://github.com/mimseyedi/cprompt
 import sys
 import tty
 import termios
+from ansi import ESC, CSI
 
 
 KEYS: dict = {
@@ -81,3 +82,65 @@ def getchar() -> str:
         return sys.stdin.read(1)
     finally:
         termios.tcsetattr(fd, termios.TCSANOW, attr)
+
+
+def readkey() -> str:
+    """
+    The task of this function is to read the key pressed by the user with the help of the getchar function.
+    This function connects the entered input to the corresponding keys and finally returns the name of the entered key.
+
+    :return: str
+    """
+
+    char: str = getchar()
+
+    if char == ESC:
+        if getchar() == CSI:
+            _ = getchar()
+            if _ == '1':
+                if getchar() == ';':
+                    if getchar() == '2':
+                        _ = getchar()
+                        match _:
+                            case 'C':
+                                return 'SHIFT+RIGHT'
+                            case 'D':
+                                return 'SHIFT+LEFT'
+            elif _ == '2':
+                if getchar() == '~':
+                    return 'INSERT'
+            elif _ == '3':
+                if getchar() == '~':
+                    return 'DELETE'
+            elif _ == '5':
+                return 'PAGE_UP'
+            elif _ == '6':
+                return 'PAGE_DOWN'
+
+            elif _ == 'H':
+                return 'HOME'
+            elif _ == 'F':
+                return 'END'
+            elif _ == 'A':
+                return 'UP'
+            elif _ == 'B':
+                return 'DOWN'
+            elif _ == 'C':
+                return 'RIGHT'
+            elif _ == 'D':
+                return 'LEFT'
+    else:
+        if char == KEYS.get('escape'):
+            return 'ESCAPE'
+        elif char == KEYS.get('backspace'):
+            return 'BACKSPACE'
+        elif char == KEYS.get('enter'):
+            return 'ENTER'
+        elif char == KEYS.get('tab'):
+            return 'TAB'
+        else:
+            for key, value in KEYS.items():
+                if char == value:
+                    return key.upper()
+
+        return char
