@@ -16,14 +16,15 @@ cprompt Github repository: https://github.com/mimseyedi/cprompt
 import os
 import sys
 
+from keys import readkey
 from ansi import (
     NEW_LINE,
     TERMINAL_BELL,
     ERASE_ENTIRE_LINE,
+    extract_non_ansi,
     move_cursor_to_column,
     get_cursor_position as gcp,
 )
-from keys import KEYS, readkey
 
 
 class Cprompt:
@@ -46,7 +47,7 @@ class Cprompt:
 
         self.conditions = tuple() if conditions is None else conditions
 
-    def write(self, char: str) -> None:
+    def _write(self, char: str) -> None:
         """
         The task of this method is to write a character in the user's input string.
         This method is also responsible for removing ANSI escape codes from
@@ -57,14 +58,17 @@ class Cprompt:
         """
 
         if isinstance(char, str):
-            if self.__text:
-                termcol, _ = os.get_terminal_size()
-                if len(self.__text) + len(self.message) + 1 < termcol:
-                    self.__text = self.__text[0:self.__cursor] + char + self.__text[self.__cursor:]
+            if len(char) == 1:
+                if self.__text:
+                    termcol, _ = os.get_terminal_size()
+                    if len(self.__text) + len(self.message) + 1 < termcol:
+                        self.__text = self.__text[0:self.__cursor] + char + self.__text[self.__cursor:]
+                        self.__cursor += 1
+                else:
+                    self.__text += char
                     self.__cursor += 1
             else:
-                self.__text += char
-                self.__cursor += 1
+                raise ValueError
         else:
             raise TypeError
 
@@ -79,8 +83,16 @@ class Cprompt:
         """
 
         if isinstance(text, str):
-            for char in text:
-                self.write(char)
+            status, string_ = extract_non_ansi(text)
+
+            if status:
+                for char in string_:
+                    self._write(char)
+
+                self.__formatted[string_] = text
+            else:
+                for char in text:
+                    self._write(char)
         else:
             raise TypeError
 
@@ -349,7 +361,7 @@ class Cprompt:
 
         self.__text = ""
 
-    def display(self) -> None:
+    def _display(self) -> None:
         """
         The task of this method is to display the user's input live and instantly.
 
@@ -395,8 +407,7 @@ class Cprompt:
             if not isinstance(conditions, tuple):
                 raise TypeError
 
-        sys.stdout.write(self.message)
-        sys.stdout.flush()
+        self._display()
 
         while True:
             key: str = readkey()
@@ -415,7 +426,7 @@ class Cprompt:
 
             match key:
                 case 'ENTER':
-                    self.display()
+                    self._display()
                     sys.stdout.write(NEW_LINE)
                     break
 
@@ -429,7 +440,7 @@ class Cprompt:
                     self.move_cursor_left()
 
                 case 'SPACE':
-                    self.write(" ")
+                    self._write(" ")
 
                 case _:
                     special_keys: tuple = (
@@ -448,9 +459,9 @@ class Cprompt:
                     )
                     if key is not None:
                         if not key.startswith('CTRL') and key not in special_keys:
-                            self.write(key)
+                            self._write(key)
 
-            self.display()
+            self._display()
 
             if exit_status:
                 sys.stdout.write(NEW_LINE)
