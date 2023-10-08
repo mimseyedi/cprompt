@@ -150,7 +150,14 @@ def readkey() -> str:
             return 'TAB'
         else:
             for key, value in KEYS.items():
-                if char == value:
+                if char == value and char not in (
+                    'A',
+                    'B',
+                    'C',
+                    'D',
+                    'H',
+                    'F',
+                ):
                     return key.upper()
 
         return char
