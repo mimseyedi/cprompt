@@ -15,6 +15,7 @@ cprompt Github repository: https://github.com/mimseyedi/cprompt
 
 import os
 import sys
+from typing import Callable
 
 from keys import readkey
 from ansi import (
@@ -24,6 +25,11 @@ from ansi import (
     extract_non_ansi,
     move_cursor_to_column,
     get_cursor_position as gcp,
+)
+from errors import (
+    LimitError,
+    FormattedTypeError,
+    ConditionIsNotCallableError,
 )
 
 
@@ -36,16 +42,52 @@ class Cprompt:
         self,
         message: str="",
         *,
+        limit: int=None,
         conditions: tuple=None,
     ):
-        self.message = message
-
         self.__text: str = ""
         self.__cursor: int = 0
         self.__formatted: dict = {}
         self.__last_key: str = ""
 
-        self.conditions = tuple() if conditions is None else conditions
+        if isinstance(message, str):
+            self.message = message
+        else:
+            raise TypeError(
+                ('The message attribute must be of string type, '
+                 f'but received "{type(message)}".')
+            )
+
+        if conditions is None:
+            self.conditions = tuple()
+        else:
+            if isinstance(conditions, tuple):
+                for func in conditions:
+                    if not isinstance(func, Callable):
+                        raise ConditionIsNotCallableError(
+                            f'All conditions must be callable, but received "{type(func)}".'
+                        )
+
+                self.conditions = conditions
+            else:
+                raise TypeError(
+                    ('The conditions attribute must be of tuple[callable,...] type, '
+                     f'but received "{type(conditions)}".')
+                )
+
+        termcol, _ = os.get_terminal_size()
+
+        if limit is None:
+            self.limit = termcol
+        else:
+            if isinstance(limit, int) and limit <= termcol:
+                self.limit = limit
+            else:
+                raise LimitError(
+                    ('The limit attribute must be of int type and '
+                     'within the width of the terminal screen. '
+                     f'limit={limit}, terminal width={termcol}')
+                )
 
     def _write(self, char: str) -> None:
         """
@@ -60,17 +102,22 @@ class Cprompt:
         if isinstance(char, str):
             if len(char) == 1:
                 if self.__text:
-                    termcol, _ = os.get_terminal_size()
-                    if len(self.__text) + len(self.message) + 1 < termcol:
+                    if len(self.__text) + len(self.message) + 1 < self.limit:
                         self.__text = self.__text[0:self.__cursor] + char + self.__text[self.__cursor:]
                         self.__cursor += 1
+                    else:
+                        sys.stdout.write(TERMINAL_BELL)
                 else:
                     self.__text += char
                     self.__cursor += 1
             else:
-                raise ValueError
+                raise ValueError(
+                    f'The length of the char argument should be 1, but received {len(char)}.'
+                )
         else:
-            raise TypeError
+            raise TypeError(
+                f'The type of char argument must be string, but received "{type(char)}".'
+            )
 
     def insert_text(self, text: str) -> None:
         """
@@ -83,18 +130,26 @@ class Cprompt:
         """
 
         if isinstance(text, str):
-            status, string_ = extract_non_ansi(text)
+            if len(text) <= self.limit:
+                status, string_ = extract_non_ansi(text)
 
-            if status:
-                for char in string_:
-                    self._write(char)
+                if status:
+                    for char in string_:
+                        self._write(char)
 
-                self.__formatted[string_] = text
+                    self.__formatted[string_] = text
+                else:
+                    for char in text:
+                        self._write(char)
             else:
-                for char in text:
-                    self._write(char)
+                raise LimitError(
+                    ('The text length is greater than limit. '
+                     f'text length={len(text)}, limit={self.limit}')
+                )
         else:
-            raise TypeError
+            raise TypeError(
+                f'The type of text argument must be string, but received "{type(text)}".'
+            )
 
     def remove(self) -> None:
         """
@@ -312,10 +367,19 @@ class Cprompt:
         """
 
         if isinstance(text_, str):
-            self.__text = text_
-            self.__cursor = len(self.__text)
+            if len(text_) <= self.limit:
+                self.__text = text_
+                self.__cursor = len(self.__text)
+            else:
+                raise LimitError(
+                    ('The text length is greater than limit. '
+                     f'text length={len(text_)}, limit={self.limit}')
+                )
         else:
-            raise TypeError
+            raise TypeError(
+                ('The type of text_ argument must be string, '
+                 f'but received "{type(text_)}"')
+            )
 
     @cursor.setter
     def cursor(self, cursor_: int) -> None:
@@ -328,9 +392,18 @@ class Cprompt:
         """
 
         if isinstance(cursor_, int):
-            self.__cursor = cursor_
+            if cursor_ <= self.limit:
+                self.__cursor = cursor_
+            else:
+                raise LimitError(
+                    ('The value of the cursor is greater than the limit. '
+                     f'cursor={cursor_}, limit={self.limit}')
+                )
         else:
-            raise TypeError
+            raise TypeError(
+                (f'The type of cursor_ argument must be integer, '
+                 'but received "{type(cursor_)}".')
+            )
 
     @formatted.setter
     def formatted(self, formatted_: dict) -> None:
@@ -345,11 +418,17 @@ class Cprompt:
         if isinstance(formatted_, dict):
             for key, value in formatted_.items():
                 if not isinstance(key, str) or not isinstance(value, str):
-                    raise Exception
+                    raise FormattedTypeError(
+                        ('The type of key and value must be string, '
+                         f'but received key="{type(key)}", value="{type(value)}".')
+                    )
 
             self.__formatted = formatted_.copy()
         else:
-            raise TypeError
+            raise TypeError(
+                ('The type of formatted_ argument must be dictionary, '
+                f'but received "{type(formatted_)}".')
+            )
 
     def clear(self) -> None:
         """
@@ -361,10 +440,11 @@ class Cprompt:
 
         self.__text = ""
 
-    def _display(self) -> None:
+    def _display(self, be_returned: bool=False) -> None|str:
         """
         The task of this method is to display the user's input live and instantly.
 
+        :param be_returned: Will the formatted user input be returned?
         :return: None
         """
 
@@ -383,12 +463,15 @@ class Cprompt:
         sys.stdout.write(ERASE_ENTIRE_LINE)
         sys.stdout.write(move_cursor_to_column(col=0))
 
+        if be_returned:
+            return ''.join(output)
+
         sys.stdout.write(
             self.message + ''.join(output) + move_cursor_to_column(col=self.__cursor+len(self.message)+1)
         )
         sys.stdout.flush()
 
-    def prompt(self, conditions: tuple=None) -> str:
+    def prompt(self, conditions: tuple=None, pure_return: bool=True) -> str:
         """
         The task of this method is to get input from the user.
         This method reads the keyboard with the help of a set of methods of this class
@@ -398,6 +481,7 @@ class Cprompt:
         inherit and follow the conditions of its instance.
 
         :param conditions: Conditions to be checked at the time of entry in the format of a tuple.
+        :param pure_return: Is the actual value of the text returned or formatted?
         :return: str
         """
 
@@ -468,7 +552,10 @@ class Cprompt:
                 sys.stdout.flush()
                 break
 
-        return self.__text
+        if pure_return:
+            return self.__text
+
+        return self._display(be_returned=True)
 
     def __ge__(self, other):
         if isinstance(other, Cprompt):
