@@ -13,31 +13,16 @@ cprompt Github repository: https://github.com/mimseyedi/cprompt
 """
 
 
-import os
 import sys
-from typing import Callable
-
+from base import BaseCprompt
 from keys import readkey
-from ansi import (
-    NEW_LINE,
-    TERMINAL_BELL,
-    ERASE_ENTIRE_LINE,
-    extract_non_ansi,
-    move_cursor_to_column,
-    get_cursor_position as gcp,
-)
-from errors import (
-    LimitError,
-    FormattedTypeError,
-    ConditionIsNotCallableError,
-)
+from ansi import NEW_LINE, ERASE_ENTIRE_LINE, move_cursor_to_column
 
 
-class Cprompt:
+class Cprompt(BaseCprompt):
     """
 
     """
-
     def __init__(
         self,
         message: str="",
@@ -45,400 +30,11 @@ class Cprompt:
         limit: int=None,
         conditions: tuple=None,
     ):
-        self.__text: str = ""
-        self.__cursor: int = 0
-        self.__formatted: dict = {}
-        self.__last_key: str = ""
-
-        if isinstance(message, str):
-            self.message = message
-        else:
-            raise TypeError(
-                ('The message attribute must be of string type, '
-                 f'but received "{type(message)}".')
-            )
-
-        if conditions is None:
-            self.conditions = tuple()
-        else:
-            if isinstance(conditions, tuple):
-                for func in conditions:
-                    if not isinstance(func, Callable):
-                        raise ConditionIsNotCallableError(
-                            f'All conditions must be callable, but received "{type(func)}".'
-                        )
-
-                self.conditions = conditions
-            else:
-                raise TypeError(
-                    ('The conditions attribute must be of tuple[callable,...] type, '
-                     f'but received "{type(conditions)}".')
-                )
-
-        termcol, _ = os.get_terminal_size()
-
-        if limit is None:
-            self.limit = termcol
-        else:
-            if isinstance(limit, int) and limit <= termcol:
-                self.limit = limit
-            else:
-                raise LimitError(
-                    ('The limit attribute must be of int type and '
-                     'within the width of the terminal screen. '
-                     f'limit={limit}, terminal width={termcol}')
-                )
-
-    def _write(self, char: str) -> None:
-        """
-        The task of this method is to write a character in the user's input string.
-        This method is also responsible for removing ANSI escape codes from
-        the user's input string and controlling the write limit.
-
-        :param char: A string containing a single character.
-        :return: None
-        """
-
-        if isinstance(char, str):
-            if len(char) == 1:
-                if self.__text:
-                    if len(self.__text) + len(self.message) + 1 < self.limit:
-                        self.__text = self.__text[0:self.__cursor] + char + self.__text[self.__cursor:]
-                        self.__cursor += 1
-                    else:
-                        sys.stdout.write(TERMINAL_BELL)
-                else:
-                    self.__text += char
-                    self.__cursor += 1
-            else:
-                raise ValueError(
-                    f'The length of the char argument should be 1, but received {len(char)}.'
-                )
-        else:
-            raise TypeError(
-                f'The type of char argument must be string, but received "{type(char)}".'
-            )
-
-    def insert_text(self, text: str) -> None:
-        """
-        The task of this method is to insert a text in the user's input string.
-        This method is also responsible for removing ANSI escape codes from
-        the user's input string and controlling the text limit.
-
-        :param text: A string containing multiple characters.
-        :return: None
-        """
-
-        if isinstance(text, str):
-            if len(text) <= self.limit:
-                status, string_ = extract_non_ansi(text)
-
-                if status:
-                    for char in string_:
-                        self._write(char)
-
-                    self.__formatted[string_] = text
-                else:
-                    for char in text:
-                        self._write(char)
-            else:
-                raise LimitError(
-                    ('The text length is greater than limit. '
-                     f'text length={len(text)}, limit={self.limit}')
-                )
-        else:
-            raise TypeError(
-                f'The type of text argument must be string, but received "{type(text)}".'
-            )
-
-    def remove(self) -> None:
-        """
-        The task of this method is to delete a character from the location of the cursor.
-        This function pushes the cursor back and deletes one character from the written input.
-
-        :return: None
-        """
-
-        if self.__cursor > 0:
-            self.__cursor -= 1
-            self.__text = self.__text[:self.__cursor] + self.__text[self.__cursor+1:]
-        else:
-            sys.stdout.write(TERMINAL_BELL)
-
-    def move_cursor_right(self) -> None:
-        """
-        The task of this method is to move the cursor one unit to the 'right'.
-        (Here unit means one column in the terminal which is equivalent to one character)
-
-        With the help of this method and relating it to a key, you can easily move
-        to the 'right' among the user's input strings.
-
-        :return: None
-        """
-
-        if self.__cursor < len(self.__text):
-            self.__cursor += 1
-        else:
-            sys.stdout.write(TERMINAL_BELL)
-
-    def move_cursor_left(self) -> None:
-        """
-        The task of this method is to move the cursor one unit to the 'left'.
-        (Here unit means one column in the terminal which is equivalent to one character)
-
-        With the help of this method and relating it to a key, you can easily move
-        to the 'left' among the user's input strings.
-
-        :return: None
-        """
-
-        if self.__cursor > 0:
-            self.__cursor -= 1
-        else:
-            sys.stdout.write(TERMINAL_BELL)
-
-    def get_word_before_cursor(self) -> str:
-        """
-        The task of this method is to return the word before the cursor.
-        This method returns only the word and does not count the empty space as part of the word.
-
-        :return: str
-        """
-
-        splitted_text: list = self.__text[:self.__cursor].split()
-        return splitted_text[-1] if splitted_text else ''
-
-    def get_word_after_cursor(self) -> str:
-        """
-        The task of this method is to return the word after the cursor.
-        This method returns only the word and does not count the empty space as part of the word.
-
-        :return: str
-        """
-
-        splitted_text: list = self.__text[self.__cursor:].split()
-        return splitted_text[0] if splitted_text else ''
-
-    def get_text_before_cursor(self) -> str:
-        """
-        The task of this method is to return the text before the cursor.
-        This method will return all the characters before the cursor in the form of a string.
-
-        :return: str
-        """
-
-        return self.__text[:self.__cursor]
-
-    def get_text_after_cursor(self) -> str:
-        """
-        The task of this method is to return the text after the cursor.
-        This method will return all the characters after the cursor in the form of a string.
-
-        :return: str
-        """
-
-        return self.__text[self.__cursor:]
-
-    def del_word_before_cursor(self) -> None:
-        """
-        The task of this method is to delete the word that is
-        before the cursor from the input string.
-
-        This method does not return any value and will be in place.
-
-        :return: None
-        """
-
-        for _ in range(len(self.get_word_before_cursor()) + 1):
-            self.remove()
-
-    def remove_word_after_cursor(self) -> None:
-        """
-        The task of this method is to delete the word that is
-        after the cursor from the input string.
-
-        This method does not return any value and will be in place.
-
-        :return: None
-        """
-
-        len_of_word_after_cursor: int = len(self.get_word_after_cursor()) + 1
-
-        self.__cursor += len_of_word_after_cursor
-
-        for _ in range(len_of_word_after_cursor):
-            self.remove()
-
-    def remove_text_before_cursor(self) -> None:
-        """
-        The task of this method is to delete the text that is
-        before the cursor from the input string.
-
-        This method does not return any value and will be in place.
-
-        :return: None
-        """
-
-        for _ in range(len(self.get_text_before_cursor())):
-            self.remove()
-
-    def remove_text_after_cursor(self) -> None:
-        """
-        The task of this method is to delete the text that is
-        after the cursor from the input string.
-
-        This method does not return any value and will be in place.
-
-        :return: None
-        """
-
-        len_of_text_after_cursor: int = len(self.get_text_after_cursor()) + 1
-
-        self.__cursor += len_of_text_after_cursor
-
-        for _ in range(len_of_text_after_cursor):
-            self.remove()
-
-    @staticmethod
-    def get_cursor_position() -> tuple[int, int]:
-        """
-        The task of this method is to read the cursor coordinates from
-        the terminal screen using a special ANSI escape code.
-
-        This method refers to a function with the same name in -> .keys.get_cursor_position()
-
-        :return: tuple[int, int]
-        """
-
-        return gcp()
-
-    @property
-    def text(self) -> str:
-        """
-        A getter method to get the user input value.
-        This method returns the input entered by the user in the form of a string.
-
-        :return: str
-        """
-
-        return self.__text
-
-    @property
-    def cursor(self) -> int:
-        """
-        A getter method to get the value and current location of the cursor.
-        This method returns the cursor location in the form of an integer.
-
-        :return: int
-        """
-
-        return self.__cursor
-
-    @property
-    def formatted(self) -> dict:
-        """
-        A getter method to obtain formatted information from user input.
-        This method returns the formatted data in the form of a dictionary.
-
-        :return: dict
-        """
-
-        return self.__formatted.copy()
-
-    @property
-    def last_key(self) -> str:
-        """
-        A getter method to get the last key entered by the user.
-        This method returns the last key entered by the user in the form of a string.
-
-        :return: str
-        """
-
-        return self.__last_key
-
-    @text.setter
-    def text(self, text_: str) -> None:
-        """
-        A setter method to change user input to another string.
-        The value of the 'text_' argument must be of string type.
-
-        :param text_: The new string that is supposed to replace the user input.
-        :return: None
-        """
-
-        if isinstance(text_, str):
-            if len(text_) <= self.limit:
-                self.__text = text_
-                self.__cursor = len(self.__text)
-            else:
-                raise LimitError(
-                    ('The text length is greater than limit. '
-                     f'text length={len(text_)}, limit={self.limit}')
-                )
-        else:
-            raise TypeError(
-                ('The type of text_ argument must be string, '
-                 f'but received "{type(text_)}"')
-            )
-
-    @cursor.setter
-    def cursor(self, cursor_: int) -> None:
-        """
-        A setter method to change cursor position to another location.
-        The value of the 'cursor_' argument must be of integer type.
-
-        :param cursor_: The new cursor position in integer format.
-        :return: None
-        """
-
-        if isinstance(cursor_, int):
-            if cursor_ <= self.limit:
-                self.__cursor = cursor_
-            else:
-                raise LimitError(
-                    ('The value of the cursor is greater than the limit. '
-                     f'cursor={cursor_}, limit={self.limit}')
-                )
-        else:
-            raise TypeError(
-                (f'The type of cursor_ argument must be integer, '
-                 'but received "{type(cursor_)}".')
-            )
-
-    @formatted.setter
-    def formatted(self, formatted_: dict) -> None:
-        """
-        A setter method to change formatted data to another format or style.
-        The value of the 'formatted_' argument must be of dictionary type.
-
-        :param formatted_: The new formatted data in dictionary type.
-        :return: None
-        """
-
-        if isinstance(formatted_, dict):
-            for key, value in formatted_.items():
-                if not isinstance(key, str) or not isinstance(value, str):
-                    raise FormattedTypeError(
-                        ('The type of key and value must be string, '
-                         f'but received key="{type(key)}", value="{type(value)}".')
-                    )
-
-            self.__formatted = formatted_.copy()
-        else:
-            raise TypeError(
-                ('The type of formatted_ argument must be dictionary, '
-                f'but received "{type(formatted_)}".')
-            )
-
-    def clear(self) -> None:
-        """
-        The task of this method is to delete the input entered by the user.
-        This method does not return any value and will be in place.
-
-        :return: None
-        """
-
-        self.__text = ""
+        super().__init__(
+            message,
+            limit=limit,
+            conditions=conditions,
+        )
 
     def _display(self, be_returned: bool=False) -> None|str:
         """
@@ -448,12 +44,12 @@ class Cprompt:
         :return: None
         """
 
-        temp: str = self.__text.replace(" ", " - ")
+        temp: str = self._text.replace(" ", " - ")
 
         output: list = []
         for word in temp.split():
-            if word in self.__formatted.keys():
-                output.append(self.__formatted[word])
+            if word in self._formatted.keys():
+                output.append(self._formatted[word])
             else:
                 if word == '-':
                     output.append(" ")
@@ -467,7 +63,7 @@ class Cprompt:
             return ''.join(output)
 
         sys.stdout.write(
-            self.message + ''.join(output) + move_cursor_to_column(col=self.__cursor+len(self.message)+1)
+            self.message + ''.join(output) + move_cursor_to_column(col=self._cursor+len(self.message)+1)
         )
         sys.stdout.flush()
 
@@ -495,7 +91,7 @@ class Cprompt:
 
         while True:
             key: str = readkey()
-            self.__last_key: str = key
+            self._last_key: str = key
             exit_status: bool = False
 
             if conditions:
@@ -553,55 +149,6 @@ class Cprompt:
                 break
 
         if pure_return:
-            return self.__text
+            return self._text
 
         return self._display(be_returned=True)
-
-    def __ge__(self, other):
-        if isinstance(other, Cprompt):
-            return len(self.__text) >= len(other.__text)
-
-        elif isinstance(other, str):
-            return len(self.__text) >= len(other)
-
-        raise TypeError
-
-    def __gt__(self, other):
-        if isinstance(other, Cprompt):
-            return len(self.__text) > len(other.__text)
-
-        elif isinstance(other, str):
-            return len(self.__text) > len(other)
-
-        raise TypeError
-
-    def __eq__(self, other):
-        if isinstance(other, Cprompt):
-            return len(self.__text) == len(other.__text)
-
-        elif isinstance(other, str):
-            return len(self.__text) == len(other)
-
-        elif isinstance(other, bool):
-            return True if self.__text else False
-
-        raise TypeError
-
-    def __len__(self):
-        return len(self.__text)
-
-    def __bool__(self):
-        return True if len(self.__text) > 0 else False
-
-    def __str__(self):
-        return self.__text.__str__()
-
-    def __repr__(self):
-        return (
-            'Cprompt('
-            f'message={self.message}, '
-            f'conditions={self.conditions}, '
-            f'text={self.__text}, '
-            f'cursor={self.__cursor}, '
-            f'formatted={self.__formatted})'
-        )
