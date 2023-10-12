@@ -46,6 +46,8 @@ class BaseCprompt(ABC):
         self._cursor: int = 0
         self._formatted: dict = {}
         self._last_key: str = ""
+        self._ignored_keys: list = []
+        self._returned_value: str|None = None
 
         if isinstance(message, str):
             self.message = message
@@ -353,6 +355,28 @@ class BaseCprompt(ABC):
 
         return self._last_key
 
+    @property
+    def returned_value(self) -> str:
+        """
+        A getter method to get the returned value from conditions.
+        This method returns the returned value from conditions in prompt.
+
+        :return: str
+        """
+
+        return self._returned_value
+
+    @property
+    def ignored_keys(self) -> list:
+        """
+        A getter method to get the ignored keys data.
+        This method returns all keys that were ignored in prompt process.
+
+        :return: list
+        """
+
+        return self._ignored_keys
+
     @cursor.setter
     def cursor(self, cursor_: int) -> None:
         """
@@ -402,6 +426,18 @@ class BaseCprompt(ABC):
                  f'but received "{type(formatted_)}".')
             )
 
+    @ignored_keys.setter
+    def ignored_keys(self, ignored_keys_: list) -> None:
+        """
+        A setter method to change ignored_keys data to add keys in it.
+        The value of the 'ignored_keys_' argument must be of list type.
+
+        :param ignored_keys_: The new ignored_keys list.
+        :return: None
+        """
+
+        self._ignored_keys = ignored_keys_.copy()
+
     def clear(self) -> None:
         """
         The task of this method is to delete the input entered by the user.
@@ -411,6 +447,7 @@ class BaseCprompt(ABC):
         """
 
         self._text = ""
+        self._cursor = 0
 
     @abstractmethod
     def _display(self, be_returned: bool = False) -> None | str:
